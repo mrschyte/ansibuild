@@ -1,0 +1,29 @@
+---
+- hosts: all
+  tasks:
+  - name: install | update package cache
+    apk: update_cache=yes
+
+  - name: install | add necessary packages
+    apk: name=asterisk state=latest
+
+  - name: acbuild | set-exec asterisk
+    shell: acbuild --debug set-exec -- /usr/sbin/asterisk -C /etc/asterisk/asterisk.conf
+    connection: local
+
+  - name: acbuild | volume add
+    shell: acbuild --debug volume add --read-only etc-config /etc/asterisk
+    connection: local
+    
+  - name: acbuild | port add single
+    shell: acbuild --debug port add "{{item.port}}-{{item.proto}}" "{{item.proto}}" "{{item.port}}"
+    with_items:
+    - { port: 4569, proto: "udp" }
+    - { port: 5060, proto: "udp" }
+    connection: local
+
+  - name: acbuild | port add range
+    shell: acbuild --debug port add --count "{{item.count}}" "{{item.port}}-{{item.port + item.count}}" "{{item.proto}}" "{{item.port}}"
+    with_items:
+    - { port: 10000, count: 10000, proto: "udp" }
+    connection: local
