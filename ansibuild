@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+set -e
+
+# Check whether we have all the arguments
+if [[ "$#" -ne 1 ]]; then
+	echo -ne "help:\n\t$0 [aci_name]\n"
+	exit 1
+else
+	# extract ACI name from arguments
+	ACI_NAME="$1"
+fi
+
+# Check whether we're running as root
+if [[ "${EUID}" -ne 0 ]]; then
+	echo "This script uses functionality which requires root privileges"
+	exit 1
+fi
+
+# Set the Alpine repository to use for bootstrapping
+REPO_BASE="http://nl.alpinelinux.org/alpine/v3.5/main/"
+
+# Create temporary build root
+ALPN_ROOT=$(mktemp -d)
+
+# In the event of the script exiting, and end the build
+trap "{ export EXT=$?; acbuild --debug end && rm -rf '${ALPN_ROOT}' && exit $EXT; }" EXIT
+
+# Start the build with an empty ACI
+acbuild --debug begin
+
+# Install alpine base and python for ansible
+apk --arch x86_64 -X "${REPO_BASE}" -U --allow-untrusted --root ${ALPN_ROOT} --initdb add alpine-base python
+
+# Copy resolv.conf to container
+cp "/etc/resolv.conf" "${ALPN_ROOT}/etc/resolv.conf"
+
+# Copy repositories to container
+cp "/etc/apk/repositories" "${ALPN_ROOT}/etc/apk/repositories"
+
+# Provision the image
+ansible-playbook -c chroot -i "${ALPN_ROOT}", playbook.yml
+
+# Name the ACI
+acbuild --debug set-name "${ACI_NAME}"
+
+# Copy build root into the ACI
+acbuild --debug copy-to-dir -- "${ALPN_ROOT}"/* /
+
+# Write out completed ACI
+acbuild --debug write --overwrite "${ACI_NAME}"-latest-amd64.aci
