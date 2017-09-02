@@ -47,7 +47,7 @@ cd "${WORK_ROOT}"
 acbuild --debug begin
 
 # Install alpine base and python for ansible
-apk --arch x86_64 -X "${REPO_BASE}" -U --allow-untrusted --root ${ALPN_ROOT} --initdb add alpine-base python
+apk --arch x86_64 -X "${REPO_BASE}" -U --allow-untrusted --root "${ALPN_ROOT}" --initdb add alpine-base python
 
 # Copy resolv.conf to container
 cp "/etc/resolv.conf" "${ALPN_ROOT}/etc/resolv.conf"
