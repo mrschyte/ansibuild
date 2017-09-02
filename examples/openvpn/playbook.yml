@@ -1,0 +1,25 @@
+---
+- hosts: all
+  vars:
+    entrypoint: "/usr/sbin/openvpn --config /etc/openvpn/server.conf"
+    volumes: [
+        {
+            name: "config", path: "/.volumes/config", readOnly: false,
+            links: ["/etc/openvpn"]
+        },
+    ]
+
+    packages: [
+        "openvpn",
+    ]
+
+    isolators: [
+        "CAP_NET_ADMIN",
+    ]
+
+    exposed: [
+        { port: 1194, proto: "udp" },
+    ]
+
+  roles:
+    - rkt-ansibuild

@@ -1,0 +1,7 @@
+---
+# defaults file for rkt
+entrypoint: "/bin/sh"
+volumes: []
+packages: []
+exposed: []
+isolators: []

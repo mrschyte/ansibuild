@@ -1,0 +1,57 @@
+---
+# tasks file for rkt
+- name: container | install application dependencies
+  apk: name={{item}} state=present update_cache=yes
+  with_items:
+    - "{{packages}}"
+
+- name: container | create volume directories
+  file: path={{item.path}} state=directory
+  with_items:
+    - "{{volumes}}"
+
+- name: container | remove linked directories
+  file: state=absent path={{item.1}}
+  with_subelements:
+    - "{{volumes}}"
+    - links
+
+- name: container | create mountpoint links
+  file: src={{item.0.path}}{{item.1}} dest={{item.1}} owner=root group=root state=link force=yes
+  with_subelements:
+    - "{{volumes}}"
+    - links
+
+- name: acbuild | configure container isolators
+  shell: echo '{{ item | to_json }}' | acbuild --debug isolator add -- os/linux/capabilities-retain-set -
+  with_items:
+    - { "set": "{{isolators}}" }
+  when:
+    - isolators | length > 0
+  connection: local
+
+- name: acbuild | configure container mount points
+  shell: acbuild --debug mount add {{item.readOnly | ternary("--read-only", "")}} {{item.name}} {{item.path}}
+  connection: local
+  with_items:
+    - "{{volumes}}"
+  
+- name: acbuild | configure container entrypoint
+  shell: acbuild --debug set-exec -- {{entrypoint}}
+  connection: local
+
+- name: acbuild | expose container ports (single)
+  shell: acbuild --debug port add {{item.port}}-{{item.proto}} {{item.proto}} {{item.port}}
+  with_items:
+    - "{{exposed}}"
+  when:
+    - not item.count is defined
+  connection: local
+
+- name: acbuild | expose container ports (multi)
+  shell: acbuild --debug port add --count {{item.count}} {{item.port}}-{{item.port + item.count}} {{item.proto}} {{item.port}}
+  with_items:
+    - "{{exposed}}"
+  when:
+    - item.count is defined
+  connection: local

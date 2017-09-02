@@ -1,0 +1,26 @@
+---
+- hosts: all
+  vars:
+    entrypoint: "/usr/sbin/nginx -c /etc/nginx/nginx.conf -g \"daemon off;\""
+    volumes: [
+        {
+            name: "config", path: "/.volumes/config", readOnly: true,
+            links: ["/etc/nginx"]
+        },
+        {
+            name: "wwdata", path: "/.volumes/wwdata", readOnly: true,
+            links: ["/var/www"]
+        },
+    ]
+
+    packages: [
+        "nginx",
+    ]
+
+    exposed: [
+        { port: 80, proto: "tcp" },
+        { port: 443, proto: "tcp" }
+    ]
+
+  roles:
+    - rkt-ansibuild
