@@ -10,7 +10,13 @@
   with_items:
     - "{{volumes}}"
 
-- name: container | remove linked directories
+- name: container | created linked directory structure
+  file: state=directory path={{item.1}}
+  with_subelements:
+    - "{{volumes}}"
+    - links
+
+- name: container | remove linked leaf directories
   file: state=absent path={{item.1}}
   with_subelements:
     - "{{volumes}}"
