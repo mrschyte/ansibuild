@@ -22,7 +22,6 @@ REPO_BASE="http://nl.alpinelinux.org/alpine/edge/main"
 
 # Create temporary build root
 ALPN_ROOT=$(mktemp -d)
-WORK_ROOT=$(mktemp -d)
 ACI_OUT="${ACI_NAME}"-latest-amd64.aci
 OLD_PWD="${PWD}"
 
@@ -31,7 +30,7 @@ function do_cleanup {
 
 	acbuild --debug end
 
-	rm -rf "${ALPN_ROOT}" "${WORK_ROOT}"
+	rm -rf "${ALPN_ROOT}"
 	cd "${OLD_PWD}"
 
 	exit $EXIT_CODE
@@ -39,9 +38,6 @@ function do_cleanup {
 
 # In the event of the script exiting, and end the build
 trap do_cleanup EXIT
-
-# Change to work directory
-cd "${WORK_ROOT}"
 
 # Start the build with an empty ACI
 acbuild --debug begin
